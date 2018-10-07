@@ -3,6 +3,9 @@
 
 #include <random>
 #include <algorithm>
+#include <exception>
+#include <stdexcept>
+#include <cmath>
 
 using namespace std::chrono_literals;
 using std::chrono::nanoseconds;
@@ -42,11 +45,30 @@ void Sample::sort() {
 }
 
 nanoseconds Sample::mean() const {
-	nanoseconds sum = 0ns;
-	for (nanoseconds i : times) {
-		sum += i;
-	}
+	nanoseconds sum = std::accumulate(times.begin(), times.end(), 0ns);
 	return sum / times.size();
+}
+
+nanoseconds Sample::sd(nanoseconds mean) const {
+	nanoseconds::rep sum = 0;
+	for (nanoseconds i : times) {
+		sum += std::pow(i.count() - mean.count(), 2);
+	}
+	return nanoseconds(static_cast<nanoseconds::rep>(std::sqrt(sum / times.size())));
+}
+
+std::chrono::nanoseconds Sample::p95() const {
+	if (!sorted) throw std::runtime_error("Sample is not sorted!");
+
+	size_t p95 = (times.size() * 95) / 100;
+	return times.at(p95);
+}
+
+std::chrono::nanoseconds Sample::p05() const {
+	if (!sorted) throw std::runtime_error("Sample is not sorted!");
+
+	size_t p05 = (times.size() * 5 - 99) / 100; // -99 to round down
+	return times.at(p05);
 }
 
 void Benchmark::start() {
@@ -71,6 +93,24 @@ bool Benchmark::repeat() const {
 	return to_run > (std::chrono::system_clock().now() - bench_start);
 }
 
+std::string Benchmark::getStats() const {
+	if (!bootstrap_result)				throw std::runtime_error("Results are not bootstraped.");
+	if (!bootstrap_result->isSorted())  throw std::runtime_error("Results are not sorted.");
+
+	nanoseconds mean = bootstrap_result->mean();
+	nanoseconds sd = bootstrap_result->sd(mean);
+
+	std::string str;
+	str = name + ", " + std::to_string((mean - sd).count()) + ", " + std::to_string(bootstrap_result->p05().count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(bootstrap_result->p95().count()) + ", " + std::to_string((mean + sd).count());
+	return str;
+}
+
+std::string Benchmark::getStats() {
+	if (!bootstrap_result) bootstrap_result.reset(bootstrap(sample, 1000, mean).release());
+	if (!bootstrap_result->isSorted()) bootstrap_result->sort();
+
+	return const_cast<const Benchmark *>(this)->getStats();
+}
 
 
 

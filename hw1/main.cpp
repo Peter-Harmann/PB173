@@ -19,9 +19,9 @@ int main() {
 	try {
 		Benchmark bench_1("Benchmark 1", bench1);
 
-		bench_1.run(10s);
+		bench_1.run(3s);
 
-		std::cout << bench_1.getSample().size() << std::endl;
+		std::cout << bench_1.getStats() << std::endl;
 	}
 	catch (const std::exception & e) {
 		std::cout << e.what() << std::endl;

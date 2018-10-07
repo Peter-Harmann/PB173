@@ -20,9 +20,15 @@ public:
 	std::chrono::nanoseconds operator[](size_t index) const { return times[index]; }
 	size_t size() const { return times.size(); }
 	void clear() { times.clear(); }
+
 	void sort();
+	bool isSorted() const { return sorted; }
 
 	std::chrono::nanoseconds mean() const;
+	std::chrono::nanoseconds sd(std::chrono::nanoseconds mean) const;
+	std::chrono::nanoseconds sd() const { return this->sd(this->mean()); }
+	std::chrono::nanoseconds p95() const;
+	std::chrono::nanoseconds p05() const;
 };
 
 class Benchmark {
@@ -46,6 +52,9 @@ public:
 	void stop();
 
 	bool repeat() const;
+
+	std::string getStats();
+	std::string getStats() const;
 
 	[[deprecated]] const Sample & getSample() const { return sample; }
 };
