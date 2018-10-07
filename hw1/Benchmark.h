@@ -2,22 +2,34 @@
 
 #include <string>
 #include <chrono>
+#include <memory>
 #include <vector>
 #include <functional>
 
 class Sample {
+	bool sorted = false;
 	std::vector < std::chrono::nanoseconds> times;
 
 public:
+	Sample() {}
+	Sample(const Sample & o) : times(o.times) {}
+	Sample(Sample && o) : times(std::move(o.times)) {}
+
 	void addSample(const std::chrono::nanoseconds & time);
 
+	std::chrono::nanoseconds operator[](size_t index) const { return times[index]; }
 	size_t size() const { return times.size(); }
-};
+	void clear() { times.clear(); }
+	void sort();
 
+	std::chrono::nanoseconds mean() const;
+};
 
 class Benchmark {
 	std::string name;
 	Sample sample;
+	std::unique_ptr<Sample> bootstrap_result;
+
 	std::function<void(Benchmark &)> func;
 
 	std::chrono::seconds to_run;
@@ -35,14 +47,7 @@ public:
 
 	bool repeat() const;
 
-	const Sample & getSample() const { return sample; }
+	[[deprecated]] const Sample & getSample() const { return sample; }
 };
-
-
-
-
-/*std::unique_ptr<Sample> bootstrap(const Sample & sample, std::function<double(const Sample &)> estimator, size_t iterations) {
-	return nullptr;
-}*/
 
 

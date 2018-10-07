@@ -7,9 +7,11 @@ using namespace std::chrono_literals;
 
 void bench1(Benchmark & bench) {
 	long long a = 65535;
+	bench.start();
 	for (size_t i = 0; i < 1000000; ++i) {
 		a = a * a;
 	}
+	bench.stop();
 }
 
 
