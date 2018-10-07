@@ -6,22 +6,56 @@
 #include <exception>
 #include <stdexcept>
 #include <cmath>
+#include <iostream>
 
 using namespace std::chrono_literals;
 using std::chrono::nanoseconds;
+
+static struct RNG {
+	std::default_random_engine generator;
+	unsigned int seed = 1;
+
+	RMG() {
+		seed *= std::random_device()();
+		seed *= static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count());
+		generator.seed(seed);
+	}
+
+	void addEntrppy() {
+		seed *= std::random_device()();
+		seed *= static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count());
+		generator.seed(seed);
+	}
+
+	void addEntropy(unsigned int entropy) {
+		seed ^= entropy;
+		generator.seed(seed);
+	}
+
+	int operator()(int min, int max) {
+		std::uniform_int_distribution<int> distribution(min, max);
+		return distribution(generator);
+	}
+
+	std::function<int()> getDistribution(int min, int max) {
+		std::uniform_int_distribution<int> distribution(min, max);
+		return std::bind(distribution, generator);
+	}
+} rng;
+
 
 static std::unique_ptr<Sample> bootstrap(const Sample & in, size_t iterations, std::function<std::chrono::nanoseconds(const Sample &)> estimator) {
 	std::unique_ptr<Sample> result(new Sample);
 	Sample resample;
 	size_t size = in.size();
-	std::default_random_engine generator;
-	std::uniform_int_distribution<int> distribution(0, size - 1);
+
+	auto random_num = rng.getDistribution(0, size - 1);
 
 	for (size_t i = 0; i < iterations; ++i) {
 		for (size_t j = 0; j < size; ++j) {
-			resample.addSample(in[distribution(generator)]);
+			resample.addSample(in[random_num()]);
 		}
-		std::chrono::nanoseconds mean = estimator(resample);
+		nanoseconds mean = estimator(resample);
 		result->addSample(mean);
 		resample.clear();
 	}
@@ -52,9 +86,17 @@ nanoseconds Sample::mean() const {
 nanoseconds Sample::sd(nanoseconds mean) const {
 	nanoseconds::rep sum = 0;
 	for (nanoseconds i : times) {
-		sum += std::pow(i.count() - mean.count(), 2);
+		sum += (i.count() - mean.count()) * (i.count() - mean.count());
 	}
 	return nanoseconds(static_cast<nanoseconds::rep>(std::sqrt(sum / times.size())));
+}
+
+nanoseconds Sample::var(nanoseconds mean) const {
+	nanoseconds::rep sum = 0;
+	for (nanoseconds i : times) {
+		sum += (i.count() - mean.count()) * (i.count() - mean.count());
+	}
+	return nanoseconds(sum / times.size());
 }
 
 std::chrono::nanoseconds Sample::p95() const {
@@ -71,6 +113,12 @@ std::chrono::nanoseconds Sample::p05() const {
 	return times.at(p05);
 }
 
+void Sample::print() const {
+	for (nanoseconds i : times) {
+		std::cout << i.count() << ", " << std::endl;
+	}
+}
+
 void Benchmark::start() {
 	start_time = std::chrono::high_resolution_clock().now();
 }
@@ -79,18 +127,28 @@ void Benchmark::stop() {
 	end_time = std::chrono::high_resolution_clock().now();
 }
 
-void Benchmark::run(std::chrono::seconds time) {
+void Benchmark::run(std::chrono::seconds time, unsigned int iterations, unsigned char precision) {
 	to_run = time;
 	bench_start = std::chrono::system_clock().now();
+	this->precision = precision;
 
 	while (repeat()) {
-		func(*this);
+		func(*this, iterations);
 		sample.addSample(end_time - start_time);
 	}
 }
 
 bool Benchmark::repeat() const {
-	return to_run > (std::chrono::system_clock().now() - bench_start);
+	if(to_run > (std::chrono::system_clock().now() - bench_start)) return true;
+
+	std::unique_ptr<Sample> bootstrap_sample = bootstrap(sample, 1000, mean);
+	nanoseconds sample_mean = bootstrap_sample->mean();
+	nanoseconds sample_sd = bootstrap_sample->sd(sample_mean);
+
+	if (4 * sample_sd * 100 <= precision * sample_mean) return false;
+
+	std::cout << std::to_string((4 * sample_sd * 100).count()) << "(" << std::to_string(sample_sd.count()) << ")" << " <= " << std::to_string((precision * sample_mean).count()) << "(" << std::to_string(sample_mean.count()) << ")" << std::endl;
+	return true;
 }
 
 std::string Benchmark::getStats() const {
@@ -101,7 +159,7 @@ std::string Benchmark::getStats() const {
 	nanoseconds sd = bootstrap_result->sd(mean);
 
 	std::string str;
-	str = name + ", " + std::to_string((mean - sd).count()) + ", " + std::to_string(bootstrap_result->p05().count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(bootstrap_result->p95().count()) + ", " + std::to_string((mean + sd).count());
+	str = name + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(bootstrap_result->p05().count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(bootstrap_result->p95().count()) + ", " + std::to_string((mean + 2 * sd).count());
 	return str;
 }
 
@@ -115,4 +173,14 @@ std::string Benchmark::getStats() {
 
 
 
+void BenchmarkSet::run(std::chrono::seconds time, unsigned int iterations) {
+	 /*to_run = time;
+	bench_start = std::chrono::system_clock().now();
 
+	auto it = benchmarks.insert(std::make_pair(iterations, std::make_unique<Benchmark>(name, func)));
+
+	while (repeat()) {
+		func(*this, iterations);
+		sample.addSample(end_time - start_time);
+	}*/
+}

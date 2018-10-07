@@ -4,6 +4,7 @@
 #include <chrono>
 #include <memory>
 #include <vector>
+#include <map>
 #include <functional>
 
 class Sample {
@@ -27,8 +28,11 @@ public:
 	std::chrono::nanoseconds mean() const;
 	std::chrono::nanoseconds sd(std::chrono::nanoseconds mean) const;
 	std::chrono::nanoseconds sd() const { return this->sd(this->mean()); }
+	std::chrono::nanoseconds var(std::chrono::nanoseconds mean) const;
 	std::chrono::nanoseconds p95() const;
 	std::chrono::nanoseconds p05() const;
+
+	[[deprecated]] void print() const;
 };
 
 class Benchmark {
@@ -36,17 +40,18 @@ class Benchmark {
 	Sample sample;
 	std::unique_ptr<Sample> bootstrap_result;
 
-	std::function<void(Benchmark &)> func;
+	std::function<void(Benchmark &, unsigned int iterations)> func;
 
 	std::chrono::seconds to_run;
+	unsigned char precision = 100;
 	std::chrono::time_point<std::chrono::system_clock> bench_start;
 
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time;
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> end_time;
 public:
-	Benchmark(const std::string & name, std::function<void(Benchmark &)> func) : name(name), func(func) {}
+	Benchmark(const std::string & name, std::function<void(Benchmark &, unsigned int iterations)> func) : name(name), func(func) {}
 
-	void run(std::chrono::seconds time);
+	void run(std::chrono::seconds time, unsigned int iterations = 1000000, unsigned char precision = 100);
 
 	void start();
 	void stop();
@@ -57,6 +62,17 @@ public:
 	std::string getStats() const;
 
 	[[deprecated]] const Sample & getSample() const { return sample; }
+};
+
+class BenchmarkSet {
+	std::string name;
+	std::function<void(Benchmark &, unsigned int iterations)> func;
+
+	std::map<size_t, std::unique_ptr<Benchmark>> benchmarks;
+public:
+	BenchmarkSet(const std::string & name, std::function<void(Benchmark &, unsigned int iterations)> func) : name(name), func(func) {}
+
+	void run(std::chrono::seconds time, unsigned int iterations = 1000000);
 };
 
 
