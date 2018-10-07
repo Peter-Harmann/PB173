@@ -131,6 +131,7 @@ void Benchmark::run(std::chrono::seconds time, unsigned int iterations, unsigned
 	to_run = time;
 	bench_start = std::chrono::system_clock().now();
 	this->precision = precision;
+	this->iterations = iterations;
 
 	while (repeat()) {
 		func(*this, iterations);
@@ -140,14 +141,15 @@ void Benchmark::run(std::chrono::seconds time, unsigned int iterations, unsigned
 
 bool Benchmark::repeat() const {
 	if(to_run > (std::chrono::system_clock().now() - bench_start)) return true;
+	if (precision == 250) return false;
 
 	std::unique_ptr<Sample> bootstrap_sample = bootstrap(sample, 1000, mean);
 	nanoseconds sample_mean = bootstrap_sample->mean();
 	nanoseconds sample_sd = bootstrap_sample->sd(sample_mean);
 
 	if (4 * sample_sd * 100 <= precision * sample_mean) return false;
-
-	std::cout << std::to_string((4 * sample_sd * 100).count()) << "(" << std::to_string(sample_sd.count()) << ")" << " <= " << std::to_string((precision * sample_mean).count()) << "(" << std::to_string(sample_mean.count()) << ")" << std::endl;
+	
+	//std::cout << std::to_string((4 * sample_sd * 100).count()) << "(" << std::to_string(sample_sd.count()) << ")" << " <= " << std::to_string((precision * sample_mean).count()) << "(" << std::to_string(sample_mean.count()) << ")" << std::endl;
 	return true;
 }
 
@@ -159,7 +161,7 @@ std::string Benchmark::getStats() const {
 	nanoseconds sd = bootstrap_result->sd(mean);
 
 	std::string str;
-	str = name + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(bootstrap_result->p05().count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(bootstrap_result->p95().count()) + ", " + std::to_string((mean + 2 * sd).count());
+	str = name + ", " + std::to_string(iterations) + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(bootstrap_result->p05().count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(bootstrap_result->p95().count()) + ", " + std::to_string((mean + 2 * sd).count());
 	return str;
 }
 
@@ -173,14 +175,27 @@ std::string Benchmark::getStats() {
 
 
 
-void BenchmarkSet::run(std::chrono::seconds time, unsigned int iterations) {
-	 /*to_run = time;
-	bench_start = std::chrono::system_clock().now();
+void BenchmarkSet::run(std::chrono::seconds time, unsigned int iterations, unsigned char precision) {
+	auto it = benchmarks.emplace(iterations, std::make_unique<Benchmark>(name, func));
 
-	auto it = benchmarks.insert(std::make_pair(iterations, std::make_unique<Benchmark>(name, func)));
+	if (!it.second) throw std::runtime_error("Already run for this amount of iterations!");
 
-	while (repeat()) {
-		func(*this, iterations);
-		sample.addSample(end_time - start_time);
-	}*/
+	Benchmark & bench = *it.first->second;
+	bench.run(time, iterations, precision);
+}
+
+std::string BenchmarkSet::getStats() {
+	std::string str;
+	for (auto & i : benchmarks) {
+		str += i.second->getStats() + "\n";
+	}
+	return str;
+}
+
+std::string BenchmarkSet::getStats() const {
+	std::string str;
+	for (auto & i : benchmarks) {
+		str += i.second->getStats() + "\n";
+	}
+	return str;
 }

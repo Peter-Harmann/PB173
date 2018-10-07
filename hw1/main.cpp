@@ -33,25 +33,28 @@ struct RNG {
 void bench2(Benchmark & bench, unsigned int iterations) {
 	int x = rng(100) + iterations;
 
-	std::cout << "Start 2 Test " << x << std::endl;
+	//std::cout << "Start 2 Test " << x << std::endl;
 	bench.start();
 	std::this_thread::sleep_for(std::chrono::milliseconds(x));
 	bench.stop();
-	std::cout << "End 2 Test" << std::endl;
+	//std::cout << "End 2 Test" << std::endl;
 }
 
 
 int main() {
 	try {
-		Benchmark bench_1("Benchmark 1", bench1);
+		BenchmarkSet bench_1("Benchmark 1", bench1);
 		Benchmark bench_2("Benchmark 2", bench2);
 
-		//bench_1.run(3s);
-		std::cout << "Start 2" << std::endl;
-		bench_2.run(3s, 50, 20);
+		std::vector<size_t> vec { 10000, 100000, 1000000 };
 
-		//std::cout << bench_1.getStats() << std::endl;
-		std::cout << bench_2.getStats() << std::endl;
+		std::cout << "Start 1" << std::endl;
+		bench_1.run(3s, Range(10000, 1000000, 10, [](size_t a, size_t b) { return a * b; }), Range());
+		std::cout << "Start 2" << std::endl;
+		//bench_2.run(3s, 50, 20);
+
+		std::cout << bench_1.getStats() << std::endl;
+		//std::cout << bench_2.getStats() << std::endl;
 	}
 	catch (const std::exception & e) {
 		std::cout << e.what() << std::endl;
