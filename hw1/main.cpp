@@ -49,7 +49,7 @@ int main() {
 		std::vector<size_t> vec { 10000, 100000, 1000000 };
 
 		std::cout << "Start 1" << std::endl;
-		bench_1.run(3s, Range(10000, 1000000, 10, [](size_t a, size_t b) { return a * b; }), Range());
+		bench_1.run(3s, dec_sequence(10000, 4));
 		std::cout << "Start 2" << std::endl;
 		//bench_2.run(3s, 50, 20);
 
