@@ -206,7 +206,7 @@ std::string Benchmark::getStats() {
 
 
 void BenchmarkSet::run(std::chrono::seconds time, unsigned long long iterations, unsigned char precision) {
-	auto it = benchmarks.emplace(iterations, std::make_unique<Benchmark>(name, func));
+	auto it = benchmarks.emplace(iterations, std::make_unique<Benchmark>(name, func, time_limit));
 
 	if (!it.second) throw std::runtime_error("Already run for this amount of iterations! " + std::to_string(iterations));
 
