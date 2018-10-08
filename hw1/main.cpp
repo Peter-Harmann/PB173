@@ -4,6 +4,7 @@
 #include <random>
 #include <thread>
 #include <chrono>
+#include <stdexcept>
 
 using namespace std;
 using namespace std::chrono_literals;
@@ -41,18 +42,38 @@ void bench2(Benchmark & bench, unsigned long long iterations) {
 }
 
 
-int main() {
+int main(int argc, char ** argv) {
 	try {
-		std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time, mid_time, end_time;
+		std::chrono::seconds time = 3s;
+		unsigned char precision = 250;
+		if(argc == 3) {
+			if(std::string(argv[1]) == "time") {
+				time = std::chrono::seconds(std::atoi(argv[2]));
+				if(time < 1s || time > 300s) {
+					throw std::runtime_error("Precision out of range!");
+				}
+			}
+			else if(std::string(argv[1]) == "prec") {
+				int prec = std::atoi(argv[2]);
+				if(prec < 1 || prec > 200) {
+					throw std::runtime_error("Precision out of range!");
+				}
+				precision = prec;
+			}
+			else throw std::runtime_error("Bad argument 1!");
+		}
+		else if(argc != 1) throw std::runtime_error("Bad argument count!");
 		
-		start_time = std::chrono::high_resolution_clock().now();
+		std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time, mid_time, end_time;
 		
 		BenchmarkSet bench_1("Benchmark 1", bench1);
 		BenchmarkSet bench_2("Benchmark 2", bench2);
+		
+		start_time = std::chrono::high_resolution_clock().now();
 
-		bench_1.run(3s, dec_sequence(1000000, 4));
-		bench_2.run(3s, sequence(0, 100, 10));
-		bench_2.run(3s, sequence(200, 1000, 100));
+		bench_1.run(time, dec_sequence(1000000, 4), precision);
+		bench_2.run(time, sequence(0, 100, 10), precision);
+		bench_2.run(time, sequence(200, 1000, 100), precision);
 		
 		mid_time = std::chrono::high_resolution_clock().now();
 		
