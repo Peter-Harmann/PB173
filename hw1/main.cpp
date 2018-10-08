@@ -66,8 +66,8 @@ int main(int argc, char ** argv) {
 		
 		std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time, mid_time, end_time;
 		
-		BenchmarkSet bench_1("Benchmark 1", bench1);
-		BenchmarkSet bench_2("Benchmark 2", bench2);
+		BenchmarkSet bench_1("Benchmark 1", bench1, 60s);
+		BenchmarkSet bench_2("Benchmark 2", bench2, 10s);
 		
 		start_time = std::chrono::high_resolution_clock().now();
 

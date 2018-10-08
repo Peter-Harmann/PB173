@@ -41,9 +41,10 @@ class Benchmark {
 	std::string name;
 	Sample sample;
 	std::unique_ptr<Sample> bootstrap_result;
-
+	
 	std::function<void(Benchmark &, unsigned long long iterations)> func;
-
+	std::chrono::seconds time_limit;
+	
 	std::chrono::seconds to_run;
 	unsigned char precision = 250;
 	unsigned long long iterations = 0;
@@ -52,7 +53,7 @@ class Benchmark {
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time;
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> end_time;
 public:
-	Benchmark(const std::string & name, std::function<void(Benchmark &, unsigned long long iterations)> func) : name(name), func(func) {}
+	Benchmark(const std::string & name, std::function<void(Benchmark &, unsigned long long iterations)> func, std::chrono::seconds time_limit = std::chrono::seconds(600)) : name(name), func(func), time_limit(time_limit) {}
 
 	void run(std::chrono::seconds time, unsigned long long iterations = 1000000, unsigned char precision = 250);
 
@@ -120,10 +121,11 @@ public:
 class BenchmarkSet {
 	std::string name;
 	std::function<void(Benchmark &, unsigned long long iterations)> func;
+	std::chrono::seconds time_limit;
 
 	std::map<unsigned long long, std::unique_ptr<Benchmark>> benchmarks;
 public:
-	BenchmarkSet(const std::string & name, std::function<void(Benchmark &, unsigned long long iterations)> func) : name(name), func(func) {}
+	BenchmarkSet(const std::string & name, std::function<void(Benchmark &, unsigned long long iterations)> func, std::chrono::seconds time_limit = std::chrono::seconds(600)) : name(name), func(func), time_limit(time_limit) {}
 
 	void run(std::chrono::seconds time, unsigned long long iterations = 1000000, unsigned char precision = 250);
 	void run(std::chrono::seconds time, Range first, unsigned char precision = 250) {

@@ -7,11 +7,12 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
-
-const size_t bootstrap_n = 1000;
-
+ 
 using namespace std::chrono_literals;
 using std::chrono::nanoseconds;
+
+static const size_t bootstrap_n = 1000;
+
 
 static struct RNG {
 	std::default_random_engine generator;
@@ -155,6 +156,7 @@ void Benchmark::run(std::chrono::seconds time, unsigned long long iterations, un
 
 bool Benchmark::repeat() {
 	if(to_run > (std::chrono::system_clock().now() - bench_start)) return true;
+	if(time_limit > (std::chrono::system_clock().now() - bench_start)) return true;
 	if (precision == 250) return false;
 
 	std::unique_ptr<Sample> bootstrap_res = bootstrap(sample, bootstrap_n, Sample::mean);
