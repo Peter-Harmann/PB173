@@ -156,7 +156,7 @@ void Benchmark::run(std::chrono::seconds time, unsigned long long iterations, un
 
 bool Benchmark::repeat() {
 	if(to_run > (std::chrono::system_clock().now() - bench_start)) return true;
-	if(time_limit > (std::chrono::system_clock().now() - bench_start)) return true;
+	if(time_limit < (std::chrono::system_clock().now() - bench_start)) return false;
 	if (precision == 250) return false;
 
 	std::unique_ptr<Sample> bootstrap_res = bootstrap(sample, bootstrap_n, Sample::mean);
