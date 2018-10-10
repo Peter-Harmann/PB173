@@ -126,12 +126,15 @@ int main(int argc, char ** argv) {
 		
 		end_time = std::chrono::high_resolution_clock().now();
 		
+		// Uncomment for statistics about total time of all benchmarks
+		/*
 		std::chrono::milliseconds elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(mid_time - start_time);
 		std::cout << "Execution time: " << elapsed_time.count() << "ms" << std::endl;
 		elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - mid_time);
 		std::cout << "Calculation time: " << elapsed_time.count() << "ms" << std::endl;
 		elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
 		std::cout << "Total time: " << elapsed_time.count() << "ms" << std::endl;
+		*/
 	}
 	catch (const std::exception & e) {
 		std::cout << e.what() << std::endl;
