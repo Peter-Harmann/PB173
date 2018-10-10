@@ -5,19 +5,11 @@
 #include <thread>
 #include <chrono>
 #include <stdexcept>
+#include <vector>
+#include <algorithm>
 
 using namespace std;
 using namespace std::chrono_literals;
-
-
-void bench1(Benchmark & bench, unsigned long long iterations) {
-	long long a = 65535;
-	bench.start();
-	for (size_t i = 0; i < iterations; ++i) {
-		a = a * a;
-	}
-	bench.stop();
-}
 
 struct RNG {
 	std::mt19937 generator;
@@ -25,11 +17,58 @@ struct RNG {
 		generator.seed(std::random_device()() * static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count()));
 	}
 
-	operator()(int max) {
+	int operator()(int max) {
 		std::uniform_int_distribution<int> distribution(0, max);
 		return distribution(generator);
 	}
+
+	double operator()(double max) {
+		std::uniform_real_distribution <double> distribution(0.0, max);
+		return distribution(generator);
+	}
+
+	std::function<int()> getDistribution(int min, int max) {
+		std::uniform_int_distribution<int> distribution(min, max);
+		return std::bind(distribution, generator);
+	}
+
+	std::function<double()> getDistribution(double min, double max) {
+		std::uniform_real_distribution<double> distribution(min, max);
+		return std::bind(distribution, generator);
+	}
 } rng;
+
+void bench1(Benchmark & bench, unsigned long long iterations) {
+	if (iterations >= 10000) {
+		std::vector<double> vec;
+		vec.resize(iterations);
+		auto d = rng.getDistribution(0.0, 1000000.0);
+		for (size_t i = 0; i < iterations; ++i) {
+			vec[i] = d();
+		}
+
+		bench.start();
+		std::sort(vec.begin(), vec.end());
+		bench.stop();
+	}
+	else {
+		size_t repeats = (20000 / iterations); // Get a reasonable number of repeats 
+		size_t size = repeats * iterations;
+		std::vector<double> vec;
+		vec.resize(size);
+		auto d = rng.getDistribution(0.0, 1000000.0);
+		for (size_t i = 0; i < size; ++i) {
+			vec[i] = d();
+		}
+
+		bench.start();
+		for (size_t i = 0; i < repeats; ++i) {
+			std::sort(vec.begin() + i * iterations, vec.begin() + i*iterations + iterations);
+		}
+		bench.stop();
+		bench.set_repeats(repeats);
+	}
+}
 
 void bench2(Benchmark & bench, unsigned long long iterations) {
 	int x = rng(100) + iterations;
@@ -49,8 +88,8 @@ int main(int argc, char ** argv) {
 		if(argc == 3) {
 			if(std::string(argv[1]) == "time") {
 				time = std::chrono::seconds(std::atoi(argv[2]));
-				if(time < 1s || time > 300s) {
-					throw std::runtime_error("Precision out of range!");
+				if(time < 1s || time > 604800s) {
+					throw std::runtime_error("Time out of range!");
 				}
 			}
 			else if(std::string(argv[1]) == "prec") {
@@ -66,19 +105,24 @@ int main(int argc, char ** argv) {
 		
 		std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time, mid_time, end_time;
 		
-		BenchmarkSet bench_1("Benchmark 1", bench1, 60s);
-		BenchmarkSet bench_2("Benchmark 2", bench2, 10s);
+		BenchmarkSet bench_1("std::sort", bench1, 120s);
 		
 		start_time = std::chrono::high_resolution_clock().now();
 
-		bench_1.run(time, dec_sequence(1000000, 4), precision);
-		bench_2.run(time, sequence(0, 100, 10), precision);
-		bench_2.run(time, sequence(200, 1000, 100), precision);
+		// Precision for very small sizes gets bad
+		//bench_1.run(time, dec_sequence(10, 5), precision);
+		//bench_1.run(time, bin_sequence(16, 15), precision);
+
+		// A more reasonable sizes
+		bench_1.run(time, dec_sequence(100, 4), precision);
+		bench_1.run(time, bin_sequence(128, 12), precision);
+
+		// Use for a single test run
+		//bench_1.run(time, 262144, precision);
 		
 		mid_time = std::chrono::high_resolution_clock().now();
 		
 		std::cout << bench_1.getStats() << std::endl;
-		std::cout << bench_2.getStats() << std::endl;
 		
 		end_time = std::chrono::high_resolution_clock().now();
 		

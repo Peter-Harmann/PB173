@@ -41,6 +41,8 @@ class Benchmark {
 	std::string name;
 	Sample sample;
 	std::unique_ptr<Sample> bootstrap_result;
+	std::unique_ptr<Sample> bootstrap_result_p05;
+	std::unique_ptr<Sample> bootstrap_result_p95;
 	
 	std::function<void(Benchmark &, unsigned long long iterations)> func;
 	std::chrono::seconds time_limit;
@@ -48,10 +50,14 @@ class Benchmark {
 	std::chrono::seconds to_run;
 	unsigned char precision = 250;
 	unsigned long long iterations = 0;
+	size_t max_samples = 2000;
+	unsigned int divisor = 1;
 	std::chrono::time_point<std::chrono::system_clock> bench_start;
 
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time;
 	std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> end_time;
+
+	void do_bootstrap();
 public:
 	Benchmark(const std::string & name, std::function<void(Benchmark &, unsigned long long iterations)> func, std::chrono::seconds time_limit = std::chrono::seconds(600)) : name(name), func(func), time_limit(time_limit) {}
 
@@ -59,6 +65,7 @@ public:
 
 	void start();
 	void stop();
+	void set_repeats(unsigned int repeats) { this->divisor = repeats; }
 
 	bool repeat();
 

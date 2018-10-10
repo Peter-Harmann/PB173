@@ -13,7 +13,6 @@ using std::chrono::nanoseconds;
 
 static const size_t bootstrap_n = 1000;
 
-
 static struct RNG {
 	std::default_random_engine generator;
 	unsigned int seed = 1;
@@ -46,14 +45,14 @@ static struct RNG {
 	}
 } rng;
 
-
+/*
 static std::unique_ptr<Sample> bootstrap(const Sample & in, size_t iterations, std::function<std::chrono::nanoseconds(Sample &)> estimator) {
 	std::unique_ptr<Sample> result(new Sample);
 	Sample resample;
 	size_t size = in.size();
 
 	auto random_num = rng.getDistribution(0, size - 1);
-
+	
 	for (size_t i = 0; i < iterations; ++i) {
 		for (size_t j = 0; j < size; ++j) {
 			resample.addSample(in[random_num()]);
@@ -63,6 +62,33 @@ static std::unique_ptr<Sample> bootstrap(const Sample & in, size_t iterations, s
 		resample.clear();
 	}
 	result->sort();
+	return result;
+}
+*/
+
+static std::vector<std::unique_ptr<Sample>> multi_bootstrap(const Sample & in, size_t iterations, std::vector<std::function<std::chrono::nanoseconds(Sample &)>> estimators) {
+	std::vector<std::unique_ptr<Sample>> result;
+	result.resize(estimators.size());
+	for (size_t j = 0, max_j = estimators.size(); j < max_j; ++j) {
+		result[j].reset(new Sample);
+	}
+	
+	Sample resample;
+	size_t size = in.size();
+
+	auto random_num = rng.getDistribution(0, size - 1);
+
+	for (size_t i = 0; i < iterations; ++i) {
+		for (size_t j = 0; j < size; ++j) {
+			resample.addSample(in[random_num()]);
+		}
+
+		for (size_t j = 0, max_j = estimators.size(); j < max_j; ++j) {
+			nanoseconds mean = estimators[j](resample);
+			result[j]->addSample(mean);
+		}
+		resample.clear();
+	}
 	return result;
 }
 
@@ -141,6 +167,16 @@ void Benchmark::stop() {
 	end_time = std::chrono::high_resolution_clock().now();
 }
 
+void Benchmark::do_bootstrap() {
+	if (bootstrap_result && bootstrap_result_p05 && bootstrap_result_p95) return;
+
+	auto res = multi_bootstrap(sample, bootstrap_n, { Sample::mean, Sample::p05, Sample::p95 });
+
+	bootstrap_result.reset(res[0].release());
+	bootstrap_result_p05.reset(res[1].release());
+	bootstrap_result_p95.reset(res[2].release());
+}
+
 void Benchmark::run(std::chrono::seconds time, unsigned long long iterations, unsigned char precision) {
 	bootstrap_result.reset();
 	to_run = time;
@@ -150,30 +186,28 @@ void Benchmark::run(std::chrono::seconds time, unsigned long long iterations, un
 
 	while (repeat()) {
 		func(*this, iterations);
-		sample.addSample(end_time - start_time);
+		sample.addSample((end_time - start_time) / this->divisor);
 	}
 }
 
 bool Benchmark::repeat() {
-	if(to_run > (std::chrono::system_clock().now() - bench_start)) return true;
+	if(to_run > (std::chrono::system_clock().now() - bench_start) && sample.size() < max_samples) return true;
 	if(time_limit < (std::chrono::system_clock().now() - bench_start)) return false;
 	if (precision == 250) return false;
 
-	std::unique_ptr<Sample> bootstrap_res = bootstrap(sample, bootstrap_n, Sample::mean);
-	nanoseconds sample_mean = bootstrap_res->mean();
-	nanoseconds sample_sd = bootstrap_res->sd(sample_mean);
-
-	if (4 * sample_sd * 100 > precision * sample_mean) return true;
+	to_run += 3s;
+	max_samples += 2000;
 	
-	// Why? ;(
-	auto bootstrap_p05(bootstrap(sample, bootstrap_n, Sample::p05));
-	auto bootstrap_p95(bootstrap(sample, bootstrap_n, Sample::p95));
-	nanoseconds p05 = bootstrap_p05->mean();
-	nanoseconds p95 = bootstrap_p95->mean();
+	std::vector<std::unique_ptr<Sample>> bootstrap_res = multi_bootstrap(sample, bootstrap_n, { Sample::mean, Sample::p05, Sample::p95 });
+	nanoseconds sample_mean = bootstrap_res[0]->mean();
+	nanoseconds p05 = bootstrap_res[1]->mean();
+	nanoseconds p95 = bootstrap_res[2]->mean();
 	
 	if ((p95 - p05) * 100 > precision * sample_mean) return true;
-	
-	bootstrap_result.reset(bootstrap_res.release());
+
+	bootstrap_result.reset(bootstrap_res[0].release());
+	bootstrap_result_p05.reset(bootstrap_res[1].release());
+	bootstrap_result_p95.reset(bootstrap_res[2].release());
 	return false;
 }
 
@@ -185,20 +219,16 @@ bool Benchmark::repeat() {
 }*/
 
 std::string Benchmark::getStats() {
-	if (!bootstrap_result) bootstrap_result.reset(bootstrap(sample, bootstrap_n, Sample::mean).release());
-	if (!bootstrap_result->isSorted()) bootstrap_result->sort();
-	
-	auto bootstrap_p05(bootstrap(sample, bootstrap_n, Sample::p05));
-	auto bootstrap_p95(bootstrap(sample, bootstrap_n, Sample::p95));
+	do_bootstrap();
 
 	nanoseconds mean = bootstrap_result->mean();
 	nanoseconds sd = bootstrap_result->sd(mean);
 
-	nanoseconds p05 = bootstrap_p05->mean();
-	nanoseconds p95 = bootstrap_p95->mean();
+	nanoseconds p05 = bootstrap_result_p05->mean();
+	nanoseconds p95 = bootstrap_result_p95->mean();
 	
 	std::string str;
-	str = name + ", " + std::to_string(iterations) + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(p05.count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string(p95.count()) + ", " + std::to_string((mean + 2 * sd).count());
+	str = name + ", " + std::to_string(iterations) + ", " + std::to_string(p05.count()) + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string((mean + 2 * sd).count()) + ", " + std::to_string(p95.count());
 	return str;
 }
 
