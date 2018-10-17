@@ -3,6 +3,7 @@
 #include <vector>
 #include <random>
 #include <cassert>
+#include <queue>
 
 struct Random
 {
@@ -16,17 +17,14 @@ struct Random
         std::mt19937 rand{ seed };
         std::uniform_int_distribution< int > dist( 1, vertices );
         _succs.resize( vertices + 1 );
-        std::set< int > connected;
-        int last = 1;
 
+		connected[1] = true;
         /* first connect everything */
-        while ( int( connected.size() ) < vertices ) {
-            int next = dist( rand );
-            if ( connected.count( next ) )
-                continue;
-            _succs[ last ].push_back( next );
-            connected.insert( next );
-            last = next;
+        for(int con = 2; con <= vertices; ++con) ) {
+			std::uniform_int_distribution< int > dist2( 1, con - 1 );
+            int next = dist2( rand );
+			
+            _succs[ con ].push_back( next );
             -- edges;
         }
 
@@ -60,24 +58,26 @@ struct Random
 template< typename G >
 std::pair< int, int > bfs( G &graph )
 {
-    std::list< int > open;
-    std::set< int > closed;
-
-    graph.initials( [&]( auto v ) { open.push_back( v ); } );
+    std::queue< int > open;
+    std::vector< bool > closed;
+	closed.resize(1024);
+	
+    graph.initials( [&]( auto v ) { open.push( v ); } );
     int edges = -1, vertices = 0;
 
     while ( !open.empty() )
     {
         auto v = open.front();
-        open.pop_front();
+        open.pop();
 
         ++ edges;
-        if ( closed.count( v ) )
+        if ( v < closed.size() && closed.at( v ) )
             continue;
 
-        closed.insert( v );
+		while(v >= closed.size()) closed.resize(closed.size()*2);
+        closed.at( v ) = true;
         ++ vertices;
-        graph.edges( v, [&]( auto v ) { open.push_back( v ); } );
+        graph.edges( v, [&]( auto v ) { open.push( v ); } );
     }
 
     return std::make_pair( vertices, edges );
