@@ -127,6 +127,42 @@ void bench3(Benchmark & bench, unsigned long long iterations) {
 	bench.stop();
 }
 
+// Tiled
+void bench4(Benchmark & bench, unsigned long long iterations) {
+	Matrix m1 = getRandomMatrix(iterations, iterations);
+	Matrix m2 = getRandomMatrix(iterations, iterations);
+	Matrix m3;
+	m3.resize(iterations);
+	for(size_t i=0; i<iterations; ++i) {
+		m3[i].resize(iterations);
+	}
+	
+	const size_t tile_size = 16;
+	
+	bench.start();
+	for (size_t i = 0; i < iterations; i += tile_size) { 
+		for (size_t j = 0; j < iterations; j += tile_size) {
+			for (size_t l = 0; l < tile_size; ++l) {
+				for (size_t m = 0; m < tile_size; ++m) {
+					m3[i + l][j + m] = 0.0;
+				}
+			}
+			for (size_t k = 0; k < iterations; k += tile_size) {
+				for (size_t l = 0; l < tile_size; ++l) {
+					for (size_t m = 0; m < tile_size; ++m) {
+						double sum = 0.0;
+						for (size_t n = 0; n < tile_size; ++n) {
+							sum += m1[i + l][k + n] * m2[k + n][j + m];
+						}
+						m3[i + l][j + m] += sum;
+					}	
+				}
+			}
+		}
+	}
+	bench.stop();
+}
+
 
 int main(int argc, char ** argv) {
 	try {
@@ -152,22 +188,37 @@ int main(int argc, char ** argv) {
 		
 		std::chrono::time_point<std::chrono::high_resolution_clock, std::chrono::nanoseconds> start_time, mid_time, end_time;
 		
-		BenchmarkSet bench_1("Natural", 	bench1, 120s);
-		BenchmarkSet bench_2("Reordered", 	bench2, 120s);
-		BenchmarkSet bench_3("Col. Copy", 	bench3, 120s);
+		BenchmarkSet bench_1("Natural", 	bench1, 300s);
+		BenchmarkSet bench_2("Reordered", 	bench2, 300s);
+		BenchmarkSet bench_3("Col. Copy", 	bench3, 300s);
+		BenchmarkSet bench_4("Tiled", 		bench4, 300s);
 		
 		start_time = std::chrono::high_resolution_clock().now();
 
-		// A more reasonable sizes
-		bench_1.run(time, bin_sequence(16, 6), precision);
-		bench_2.run(time, bin_sequence(16, 6), precision);
-		bench_3.run(time, bin_sequence(16, 6), precision);
+		// Basic sizes
+		bench_1.run(time, bin_sequence(64, 4), precision);
+		bench_2.run(time, bin_sequence(64, 4), precision);
+		bench_3.run(time, bin_sequence(64, 4), precision);
+		bench_4.run(time, bin_sequence(64, 4), precision);
+		
+		// Recommended to see the advantage of Tiled algo on larger caches. Will take about 120s
+		//bench_1.run(time, 1024, precision);
+		//bench_2.run(time, 1024, precision);
+		//bench_3.run(time, 1024, precision);
+		//bench_4.run(time, 1024, precision);
+		
+		// Even larger tests, will take almost 10 minutes
+		//bench_1.run(time, 2048, precision);
+		//bench_2.run(time, 2048, precision);
+		//bench_3.run(time, 2048, precision);
+		//bench_4.run(time, 2048, precision);
 		
 		mid_time = std::chrono::high_resolution_clock().now();
 		
 		std::cout << bench_1.getStats() << std::endl;
 		std::cout << bench_2.getStats() << std::endl;
 		std::cout << bench_3.getStats() << std::endl;
+		std::cout << bench_4.getStats() << std::endl;
 		
 		end_time = std::chrono::high_resolution_clock().now();
 		
