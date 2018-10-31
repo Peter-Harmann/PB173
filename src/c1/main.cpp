@@ -4,11 +4,7 @@
 #include <cstdlib>
 
 static bool isPrime(int n, const std::vector<int> & primes) {
-	const int * data = primes.data();
-	const int * data_end = data + primes.size();
-	while(data < data_end) {
-		++data;
-		int i = *data;
+	for(int i : primes) {
 		if(i * i > n) return true;
 		if(n % i == 0) return false;
 	}
