@@ -13,9 +13,7 @@ static inline bool isPrime(int n, const std::vector<int> & primes) {
 
 static int prime(int n) {
 	std::vector<int> primes;
-	primes.reserve(n+1);
-	primes.push_back(2);
-	primes.push_back(3);
+	primes.reserve(n);
 	
 	if(n == 1) return 2;
 	if(n == 2) return 3;
@@ -30,7 +28,6 @@ static int prime(int n) {
 			primes.push_back(i+1);
 		}
 	}
-	// 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20
 }
 
 
