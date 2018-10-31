@@ -11,6 +11,8 @@ HW2_OBJECTS = src/hw2/main.o src/hw1/Benchmark.o
 
 EX2_OBJECTS = src/ex2/main.o src/hw1/Benchmark.o
 
+C1_OBJECTS = src/c1/main.o
+
 all: hw1 hw2 ex2
 
 %.o: %.cpp $(HEADERS)
@@ -18,6 +20,9 @@ all: hw1 hw2 ex2
 
 ex2: $(EX2_OBJECTS)
 	$(CXX) -o ex2 $(EX2_OBJECTS)
+	
+c1: $(C1_OBJECTS)
+	$(CXX) -o c1 $(C1_OBJECTS)
 	
 hw1: $(HW1_OBJECTS)
 	$(CXX) -o hw1 $(HW1_OBJECTS)
