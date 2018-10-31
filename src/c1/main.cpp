@@ -4,7 +4,11 @@
 #include <cstdlib>
 
 static bool isPrime(int n, const std::vector<int> & primes) {
-	for(int i : primes) {
+	const int * data = primes.data();
+	const int * data_end = data + primes.size();
+	while(data < data_end) {
+		++data;
+		int i = *data;
 		if(i * i > n) return true;
 		if(n % i == 0) return false;
 	}
@@ -13,6 +17,7 @@ static bool isPrime(int n, const std::vector<int> & primes) {
 
 static int prime(int n) {
 	std::vector<int> primes;
+	primes.reserve(n+1);
 	primes.push_back(2);
 	primes.push_back(3);
 	
@@ -29,6 +34,8 @@ static int prime(int n) {
 			primes.push_back(i+1);
 		}
 	}
+	
+	// 6x-1 6x+1
 	return -1;
 }
 
