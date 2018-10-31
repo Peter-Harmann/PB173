@@ -3,7 +3,7 @@
 CC=gcc
 CXX=g++
 CFLAGS=-I.
-CXXFLAGS=-std=c++14 -Wall -I.
+CXXFLAGS=-std=c++14 -O3 -Wall -I.
 
 HEADERS = src/hw1/Benchmark.h
 HW1_OBJECTS = src/hw1/main.o src/hw1/Benchmark.o
