@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <cmath>
 #include <iostream>
+#include <numeric>
  
 using namespace std::chrono_literals;
 using std::chrono::nanoseconds;
@@ -170,7 +171,7 @@ void Benchmark::stop() {
 void Benchmark::do_bootstrap() {
 	if (bootstrap_result && bootstrap_result_p05 && bootstrap_result_p95) return;
 
-	auto res = multi_bootstrap(sample, bootstrap_n, { Sample::mean, Sample::p05, Sample::p95 });
+	auto res = multi_bootstrap(sample, bootstrap_n, { &Sample::mean, &Sample::p05, &Sample::p95 });
 
 	bootstrap_result.reset(res[0].release());
 	bootstrap_result_p05.reset(res[1].release());
@@ -198,7 +199,7 @@ bool Benchmark::repeat() {
 	to_run += 3s;
 	max_samples += 2000;
 	
-	std::vector<std::unique_ptr<Sample>> bootstrap_res = multi_bootstrap(sample, bootstrap_n, { Sample::mean, Sample::p05, Sample::p95 });
+	std::vector<std::unique_ptr<Sample>> bootstrap_res = multi_bootstrap(sample, bootstrap_n, { &Sample::mean, &Sample::p05, &Sample::p95 });
 	nanoseconds sample_mean = bootstrap_res[0]->mean();
 	nanoseconds p05 = bootstrap_res[1]->mean();
 	nanoseconds p95 = bootstrap_res[2]->mean();
