@@ -9,7 +9,7 @@
 #include <algorithm>
 
 using namespace std;
-using namespace std::chrono_literals;
+using namespace std::literals::chrono_literals;
 
 struct RNG {
 	std::mt19937 generator;
