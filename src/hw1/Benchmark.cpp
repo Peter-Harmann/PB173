@@ -19,13 +19,13 @@ static struct RNG {
 	unsigned int seed = 1;
 
 	RNG() {
-		seed *= std::random_device()();
+		//seed *= std::random_device()();
 		seed *= static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count());
 		generator.seed(seed);
 	}
 
 	void addEntrppy() {
-		seed *= std::random_device()();
+		//seed *= std::random_device()();
 		seed *= static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count());
 		generator.seed(seed);
 	}
