@@ -14,7 +14,7 @@ using namespace std::literals::chrono_literals;
 struct RNG {
 	std::mt19937 generator;
 	RNG() {
-		generator.seed(std::random_device()() * static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count()));
+		generator.seed(static_cast<unsigned int>(std::chrono::high_resolution_clock().now().time_since_epoch().count()));
 	}
 
 	int operator()(int max) {
