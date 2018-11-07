@@ -12,6 +12,7 @@ HW3_OBJECTS = src/hw3/main.o src/hw1/Benchmark.o
 
 EX2_OBJECTS = src/ex2/main.o src/hw1/Benchmark.o
 EX5_OBJECTS = src/ex5/bfs.o src/hw1/Benchmark.o
+EX6_OBJECTS = src/ex6/main.o src/hw1/Benchmark.o
 
 C1_OBJECTS = src/c1/main.o src/hw1/Benchmark.o
 
@@ -25,6 +26,9 @@ ex2: $(EX2_OBJECTS)
 	
 ex5: $(EX5_OBJECTS)
 	$(CXX) -o ex5 $(EX5_OBJECTS)
+	
+ex6: $(EX6_OBJECTS)
+	$(CXX) -o ex6 $(EX6_OBJECTS)
 	
 c1: $(C1_OBJECTS)
 	$(CXX) -o c1 $(C1_OBJECTS)
