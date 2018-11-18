@@ -9,6 +9,7 @@ HEADERS = src/hw1/Benchmark.h
 HW1_OBJECTS = src/hw1/main.o src/hw1/Benchmark.o
 HW2_OBJECTS = src/hw2/main.o src/hw1/Benchmark.o
 HW3_OBJECTS = src/hw3/main.o src/hw1/Benchmark.o
+HW4_OBJECTS = src/hw4/main.o src/hw1/Benchmark.o
 
 EX2_OBJECTS = src/ex2/main.o src/hw1/Benchmark.o
 EX5_OBJECTS = src/ex5/bfs.o src/hw1/Benchmark.o
@@ -41,5 +42,8 @@ hw2: $(HW2_OBJECTS)
 
 hw3: $(HW3_OBJECTS)
 	$(CXX) -o hw3 $(HW3_OBJECTS)
+	
+hw4: $(HW4_OBJECTS)
+	$(CXX) -o hw4 $(HW4_OBJECTS)
 
 
