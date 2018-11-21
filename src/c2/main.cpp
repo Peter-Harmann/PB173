@@ -22,17 +22,19 @@ double fit(const DataSet & data) {
 	double last = 0;
 	double sum_sq = compute(data, last);
 	double step = 100;
-	while(step >= 0.00001) {
+	while(true) {
 		double up = compute(data, last + step);
 		if(up < sum_sq) {
 			sum_sq = up;
 			last = last + step;
+			if(sum_sq - up < 0.00001) return last;
 		}
 		else {
 			double down = compute(data, last - step);
 			if(down < sum_sq) {
 				sum_sq = down;
 				last = last +- step;
+				if(sum_sq - down < 0.00001) return last;
 			}
 		}
 		step /= 2;
