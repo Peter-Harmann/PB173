@@ -11,10 +11,8 @@ using DataSet = std::vector<std::pair<double,double>>;
 double compute(const DataSet & data, double a) {
 	double t = 0.0;
 	for(const auto & i : data) {
-		double x3 = (i.first * i.first * i.first);
-		double d = i.second - a * x3;
-		double sq = d * d;
-		t += sq;
+		double d = i.second - a * i.first;
+		t += d * d;
 	}
 	return t;
 }
@@ -52,7 +50,7 @@ int main(int argc, char ** argv) {
 	std::cin >> x >> y;
 	while(!std::cin.eof()) {
 		std::cin >> x >> y;
-		data.push_back(std::make_pair(x, y));
+		data.push_back(std::make_pair((x * x * x), y));
 	}
 	
 	double a = fit(data);
