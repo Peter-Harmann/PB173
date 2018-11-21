@@ -23,7 +23,7 @@ double fit(const DataSet & data) {
 	double last = 0;
 	double sum_sq = compute(data, last);
 	double step = 100;
-	while(std::fabs(step) >= 0.00001) {
+	while(step >= 0.00001) {
 		double up = compute(data, last + step);
 		if(up < sum_sq) {
 			sum_sq = up;
