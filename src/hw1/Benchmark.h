@@ -69,7 +69,7 @@ public:
 
 	bool repeat();
 
-	std::string getStats();
+	std::string getStats(bool extra = false);
 
 	[[deprecated]] const Sample & getSample() const { return sample; }
 };
@@ -148,8 +148,8 @@ public:
 		}
 	}*/
 
-	std::string getStats();
-	std::string getStats() const;
+	std::string getStats(bool extra = false);
+	std::string getStats(bool extra = false) const;
 };
 
 inline Range sequence(Range::rint start, Range::rint end, Range::rint step = 1) { return Range(start, end, std::bind([](Range::rint a, Range::rint b) { return a+b; }, std::placeholders::_1, step)); }

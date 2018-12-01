@@ -219,7 +219,7 @@ bool Benchmark::repeat() {
 	return str;
 }*/
 
-std::string Benchmark::getStats() {
+std::string Benchmark::getStats(bool extra) {
 	do_bootstrap();
 
 	nanoseconds mean = bootstrap_result->mean();
@@ -229,7 +229,7 @@ std::string Benchmark::getStats() {
 	nanoseconds p95 = bootstrap_result_p95->mean();
 	
 	std::string str;
-	str = name + ", " + std::to_string(iterations) + ", " + std::to_string(p05.count()) + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string((mean + 2 * sd).count()) + ", " + std::to_string(p95.count());
+	str = name + ", " + std::to_string(iterations) + (extra ? (", " + std::to_string(sample.size())) : "") + ", " + std::to_string(p05.count()) + ", " + std::to_string((mean - 2 * sd).count()) + ", " + std::to_string(mean.count()) + ", " + std::to_string((mean + 2 * sd).count()) + ", " + std::to_string(p95.count());
 	return str;
 }
 
@@ -245,18 +245,18 @@ void BenchmarkSet::run(std::chrono::seconds time, unsigned long long iterations,
 	bench.run(time, iterations, precision);
 }
 
-std::string BenchmarkSet::getStats() {
+std::string BenchmarkSet::getStats(bool extra) {
 	std::string str;
 	for (auto & i : benchmarks) {
-		str += i.second->getStats() + "\n";
+		str += i.second->getStats(extra) + "\n";
 	}
 	return str;
 }
 
-std::string BenchmarkSet::getStats() const {
+std::string BenchmarkSet::getStats(bool extra) const {
 	std::string str;
 	for (auto & i : benchmarks) {
-		str += i.second->getStats() + "\n";
+		str += i.second->getStats(extra) + "\n";
 	}
 	return str;
 }
