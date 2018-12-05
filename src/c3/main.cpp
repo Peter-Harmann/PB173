@@ -69,17 +69,6 @@ ltc_ret ltc(const char * str, const char * substr, size_t len) {
 	if(r) {
 		return std::make_pair(len, std::make_pair(r, substr));
 	}
-	else {
-		size_t part = len / 2;
-		ltc_ret r1 = ltc(str, substr, part);
-		ltc_ret r2 = ltc(str, substr + part, len - part);
-		if(r1.first) refit(r1, str, substr);
-		if(r2.first) refit(r2, str, substr);
-		if(r1.first >= r2.first) {
-			return r1;
-		}
-		else return r2;
-	}
 	return std::make_pair(0, std::make_pair(nullptr, nullptr));
 }
 
@@ -98,8 +87,26 @@ size_t longestCommonSubs(const std::string & str1, const std::string & str2) {
 		substr = str1.c_str();
 	}
 	
-	ltc_ret r = ltc(str, substr, len);
-	return r.first;
+	//ltc_ret r = ltc(str, substr, len);
+	
+	size_t part = len;
+	while(part >= 1) {
+		size_t i = 0;
+		ltc_ret r2 = std::make_pair(0, std::make_pair(nullptr, nullptr));
+		for(; i<len; i+=part) {
+			ltc_ret r1 = ltc(str, substr+i, part);
+			if(r1.first) refit(r1, str, substr);
+			if(r1.first > r2.first) r1 = r2;
+		}
+		ltc_ret r1 = ltc(str, substr+i, len - i);
+		if(r1.first > r2.first) r1 = r2;
+		if(r1.first) {
+			return r1.first;
+		}
+		part /= 2;
+	}
+	
+	return 0;
 }
 
 
