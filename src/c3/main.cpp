@@ -30,6 +30,33 @@ const char * strfind1(const char * str, const char * substr, size_t len) {
 }
 
 using ltc_ret = std::pair<size_t, std::pair<const char *, const char *>>;
+
+void refit(ltc_ret & r1, const char * str, const char * substr) {
+	const char * tmp = r1.second.first;
+	const char * sub_tmp = r1.second.second;
+			
+	do {
+		--tmp;
+		--sub_tmp;
+	}
+	while(substr >= sub_tmp && str >= tmp && *tmp == *sub_tmp);
+			
+	++tmp;
+	++sub_tmp;
+	
+	r1.second.first = tmp;
+	r1.second.second = sub_tmp;
+			
+	size_t ret_len = 0;
+	while(*tmp != 0 && *tmp == *sub_tmp) {
+		++tmp;
+		++sub_tmp;
+		++ret_len;
+	}
+	r1.first = ret_len;
+}
+
+
 ltc_ret ltc(const char * str, const char * substr, size_t len) {
 	if(len == 0) return std::make_pair(0, std::make_pair(nullptr, nullptr));
 	if(len == 1) {
@@ -46,17 +73,8 @@ ltc_ret ltc(const char * str, const char * substr, size_t len) {
 		size_t part = len / 2;
 		ltc_ret r1 = ltc(str, substr, part);
 		ltc_ret r2 = ltc(str, substr + part, len - part);
-		if(r1.first) {
-			const char * tmp = r1.second.first;
-			const char * sub_tmp = r1.second.second;
-			size_t ret_len = 0;
-			while(*tmp != 0 && *tmp == *sub_tmp) {
-				++tmp;
-				++sub_tmp;
-				++ret_len;
-			}
-			r1.first = ret_len;
-		}
+		if(r1.first) refit(r1, str, substr);
+		if(r2.first) refit(r2, str, substr);
 		if(r1.first >= r2.first) {
 			return r1;
 		}
