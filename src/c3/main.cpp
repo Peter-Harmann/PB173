@@ -39,7 +39,7 @@ void refit(ltc_ret & r1, const char * str, const char * substr) {
 		--tmp;
 		--sub_tmp;
 	}
-	while(substr >= sub_tmp && str >= tmp && *tmp == *sub_tmp);
+	while(substr <= sub_tmp && str <= tmp && *tmp == *sub_tmp);
 			
 	++tmp;
 	++sub_tmp;
