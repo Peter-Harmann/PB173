@@ -21,7 +21,7 @@ const char * strfind1(const char * str, const char * substr, size_t len) {
 			++substr_pos;
 			++flen;
 		}
-		if(substr_pos == '\0' || flen >= len) {
+		if(*substr_pos == '\0' || flen >= len) {
 			return str;
 		}
 		++str;
